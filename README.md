@@ -4,3 +4,8 @@ Useage:
 ```
 document_finder.py
 ```
+
+Filter Year:
+```
+document_finder.py 2019
+```

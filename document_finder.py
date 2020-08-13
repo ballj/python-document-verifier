@@ -4,6 +4,48 @@ import re
 import os.path
 
 
+class Document:
+    """Class describing a document location"""
+    # pylint: disable=too-many-instance-attributes
+    # Number of attributes are required to describe the document.
+    def __init__(self, line):
+        search = re.match(
+            '^([0-9]{6})\t'
+            '([a-z0-9/]+)\t'
+            '([0-9]{2})/([0-9]{2})/(20[0-9]{2})\t'
+            '([a-z0-9]+)\t'
+            '([a-z0-9 ]+)'
+            '(\\([a-z0-9]+\\))?', line)
+        self.number = search.group(1)
+        self.folder = search.group(2)
+        self.day = int(search.group(3))
+        self.month = int(search.group(4))
+        self.year = int(search.group(5))
+        self.vendor = search.group(6)
+        self.description = search.group(7)
+        self.reference = search.group(8)
+        if self.reference:
+            self.reference = self.reference
+
+    def __str__(self):
+        return (f'{self.number}\t'
+                f'{self.folder}\t'
+                f'{self.day}/{self.month}/{self.year}\t'
+                f'{self.vendor}\t'
+                f'{self.description}\t'
+                f'{self.reference}'
+                )
+
+    def get_file(self):
+        """Return the expected filename of the file"""
+        return (
+            f'{self.folder}/'
+            f'{self.number}-'
+            f'{self.year}{self.month}{self.day}-'
+            f'{self.vendor}.pdf'
+            )
+
+
 def exists(location, filename):
     """Checks if a file exists"""
     if os.path.exists(location+'/'+filename):
@@ -16,26 +58,11 @@ def parse_index(location, index_file, year='all'):
     """Loops through the index file specified"""
     with open(location+'/'+index_file) as file_handler:
         for line in file_handler:
-            search = re.match(
-                '^([0-9]{6})\t'
-                '([a-z0-9/]+)\t'
-                '([0-9]{2})/([0-9]{2})/(20[0-9]{2})\t'
-                '([a-z0-9]+)', line)
-            index_number = search.group(1)
-            index_folder = search.group(2)
-            index_day = search.group(3)
-            index_month = search.group(4)
-            index_year = search.group(5)
-            index_vendor = search.group(6)
+            document = Document(line)
             if (
                     year == 'all' or
-                    (year.isnumeric() and int(year) == int(index_year))):
-                document_file = (
-                    f'{index_folder}/'
-                    f'{index_number}-'
-                    f'{index_year}{index_month}{index_day}-'
-                    f'{index_vendor}.pdf')
-                exists(location, document_file)
+                    (year.isnumeric() and int(year) == document.year)):
+                exists(location, document.get_file())
 
 
 if __name__ == "__main__":
